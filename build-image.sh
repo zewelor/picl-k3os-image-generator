@@ -4,13 +4,13 @@ set -e
 
 
 # Set this to default to a KNOWN GOOD pi firmware (e.g. 1.20200811); this is used if RASPBERRY_PI_FIRMWARE env variable is not specified
-DEFAULT_GOOD_PI_VERSION="1.20210201"
+DEFAULT_GOOD_PI_VERSION="1.20210303"
 
 # Set this to default to a KNOWN GOOD k3os (e.g. v0.11.1); this is used if K3OS_VERSION env variable is not specified
 DEFAULT_GOOD_K3OS_VERSION="v0.11.1"
 
 # Set this if you want to force downloads of cached files, e.g. to update dependecies use 
-FORCE_DOWNLOAD="false"
+FORCE_DOWNLOAD="true"
 
 ## Check if we have any configs
 if [ -z "$(ls config/*.yaml)" ]; then
@@ -236,6 +236,7 @@ sudo e2label $LODEV_ROOT "root"
 
 ## Initialize root
 echo "== Initializing root... =="
+rm -rf root
 mkdir root
 sudo mount $LODEV_ROOT root
 sudo mkdir root/bin root/boot root/dev root/etc root/home root/lib root/media
@@ -253,21 +254,38 @@ if [ "$IMAGE_TYPE" = "raspberrypi" ]; then
 	PITEMP="$(mktemp -d)"
 	sudo tar -xf deps/raspberrypi-firmware.tar.gz --strip 1 -C $PITEMP
 
+  rm -rf boot
 	mkdir boot
 	sudo mount $LODEV_BOOT boot
 	sudo cp -R $PITEMP/boot/* boot
 	sudo cp -R $PITEMP/modules root/lib
 
 	cat <<EOF | sudo tee boot/config.txt >/dev/null
-dtoverlay=vc4-fkms-v3d
-gpu_mem=128
+gpu_mem=16
 arm_64bit=1
+
+hdmi_ignore_hotplug=1
+hdmi_ignore_composite=1
+
+# Disable the ACT LED.
+dtparam=act_led_trigger=none
+dtparam=act_led_activelow=off
+
+# Disable the PWR LED.
+dtparam=pwr_led_trigger=none
+dtparam=pwr_led_activelow=off
+
+dtoverlay=disable-wifi
+dtoverlay=disable-bt
 
 [pi3]
 audio_pwm_mode=2
 [pi4]
 max_framebuffers=2
 kernel=kernel8.img
+
+dtparam=eth_led0=4
+dtparam=eth_led1=4
 [all]
 EOF
 	PARTUUID=$(sudo blkid -o export $LODEV_ROOT | grep PARTUUID)

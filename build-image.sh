@@ -7,7 +7,7 @@ set -e
 DEFAULT_GOOD_PI_VERSION="1.20210303"
 
 # Set this to default to a KNOWN GOOD k3os (e.g. v0.11.1); this is used if K3OS_VERSION env variable is not specified
-DEFAULT_GOOD_K3OS_VERSION="v0.11.1"
+DEFAULT_GOOD_K3OS_VERSION="v0.20.4-k3s1r0"
 
 # Set this if you want to force downloads of cached files, e.g. to update dependecies use 
 FORCE_DOWNLOAD="true"

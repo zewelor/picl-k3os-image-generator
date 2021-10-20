@@ -4,7 +4,7 @@ set -e
 
 
 # Set this to default to a KNOWN GOOD pi firmware (e.g. 1.20200811); this is used if RASPBERRY_PI_FIRMWARE env variable is not specified
-DEFAULT_GOOD_PI_VERSION="1.20210928"
+DEFAULT_GOOD_PI_VERSION="1.20211007"
 
 # Set this to default to a KNOWN GOOD k3os (e.g. v0.11.1); this is used if K3OS_VERSION env variable is not specified
 DEFAULT_GOOD_K3OS_VERSION="v0.20.11-k3s2r1"
@@ -289,7 +289,7 @@ dtparam=eth_led1=4
 [all]
 EOF
 	PARTUUID=$(sudo blkid -o export $LODEV_ROOT | grep PARTUUID)
-	echo "usb-storage.quirks=152d:0580:u dwc_otg.lpm_enable=0 root=$PARTUUID rootfstype=ext4 elevator=deadline cgroup_memory=1 cgroup_enable=memory rootwait init=/sbin/init.resizefs ro" | sudo tee boot/cmdline.txt >/dev/null
+	echo "dwc_otg.lpm_enable=0 root=$PARTUUID rootfstype=ext4 elevator=deadline cgroup_memory=1 cgroup_enable=memory rootwait init=/sbin/init.resizefs ro" | sudo tee boot/cmdline.txt >/dev/null
 	sudo rm -rf $PITEMP
 elif [ "$IMAGE_TYPE" = "orangepipc2" ]; then
 	cat <<EOF | sudo tee root/boot/env.txt >/dev/null

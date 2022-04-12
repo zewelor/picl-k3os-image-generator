@@ -4,10 +4,12 @@ set -e
 
 
 # Set this to default to a KNOWN GOOD pi firmware (e.g. 1.20200811); this is used if RASPBERRY_PI_FIRMWARE env variable is not specified
-DEFAULT_GOOD_PI_VERSION="1.20211007"
+DEFAULT_GOOD_PI_VERSION="1.20220331"
 
 # Set this to default to a KNOWN GOOD k3os (e.g. v0.11.1); this is used if K3OS_VERSION env variable is not specified
-DEFAULT_GOOD_K3OS_VERSION="v0.21.5-k3s2r1"
+DEFAULT_GOOD_K3OS_VERSION="v0.22.2-k3s2r0"
+
+K3OS_REPO="https://github.com/mazzy89/k3os/"
 
 # Set this if you want to force downloads of cached files, e.g. to update dependecies use 
 FORCE_DOWNLOAD="true"
@@ -56,7 +58,7 @@ get_pifirmware() {
     fi
 
 	# Download non free Firmware parts
-	dl_dep rpi-firmware-nonfree-master.zip https://github.com/RPi-Distro/firmware-nonfree/archive/master.zip
+	dl_dep rpi-firmware-nonfree-buster.zip https://github.com/RPi-Distro/firmware-nonfree/archive/buster.zip
 }
 
 assert_tool wget
@@ -140,10 +142,10 @@ fi
 
 if [ -z "${K3OS_VERSION}" ]; then
     echo "K3OS_VERSION env variable was not set - defaulting to known version [${DEFAULT_GOOD_K3OS_VERSION}]"
-    dl_dep k3os-rootfs-arm64.tar.gz https://github.com/rancher/k3os/releases/download/${DEFAULT_GOOD_K3OS_VERSION}/k3os-rootfs-arm64.tar.gz
+    dl_dep k3os-rootfs-arm64.tar.gz ${K3OS_REPO}/releases/download/${DEFAULT_GOOD_K3OS_VERSION}/k3os-rootfs-arm64.tar.gz
 else
     echo "K3OS_VERSION env variable set to ${K3OS_VERSION}"
-    dl_dep k3os-rootfs-arm64.tar.gz https://github.com/rancher/k3os/releases/download/${K3OS_VERSION}/k3os-rootfs-arm64.tar.gz
+    dl_dep k3os-rootfs-arm64.tar.gz ${K3OS_REPO}/releases/download/${K3OS_VERSION}/k3os-rootfs-arm64.tar.gz
 fi
 
 # To find the URL for these packages:
@@ -289,11 +291,11 @@ dtparam=eth_led1=4
 [all]
 EOF
 	PARTUUID=$(sudo blkid -o export $LODEV_ROOT | grep PARTUUID)
-	echo "usb-storage.quirks=152d:0580:u dwc_otg.lpm_enable=0 root=$PARTUUID rootfstype=ext4 elevator=deadline cgroup_memory=1 cgroup_enable=memory rootwait init=/sbin/init.resizefs ro" | sudo tee boot/cmdline.txt >/dev/null
+	echo "usb-storage.quirks=152d:0580:u dwc_otg.lpm_enable=0 root=$PARTUUID rootfstype=ext4 cgroup_memory=1 cgroup_enable=memory rootwait init=/sbin/init.resizefs ro" | sudo tee boot/cmdline.txt >/dev/null
 	sudo rm -rf $PITEMP
 elif [ "$IMAGE_TYPE" = "orangepipc2" ]; then
 	cat <<EOF | sudo tee root/boot/env.txt >/dev/null
-extraargs=elevator=deadline rootwait init=/sbin/init.resizefs ro
+rootwait init=/sbin/init.resizefs ro
 EOF
 	sudo install -m 0644 -o root -g root orangepipc2-boot.cmd root/boot/boot.cmd
 	sudo mkimage -C none -A arm -T script -d root/boot/boot.cmd root/boot/boot.scr
@@ -303,7 +305,7 @@ fi
 echo "== Installing... =="
 sudo tar -xf deps/k3os-rootfs-arm64.tar.gz --strip 1 -C root
 # config.yaml will be created by init.resizefs based on MAC of eth0
-sudo cp -R config root/k3os/system
+sudo cp -LR config root/k3os/system
 for filename in root/k3os/system/config/*.*; do [ "$filename" != "${filename,,}" ] && sudo mv "$filename" "${filename,,}" ; done 
 K3OS_VERSION=$(ls --indicator-style=none root/k3os/system/k3os | grep -v current | head -n1)
 
@@ -363,7 +365,7 @@ if [ "$IMAGE_TYPE" = "orangepipc2" ]; then
 	sudo ln -s $(cd root/boot; ls -d vmlinuz-*-sunxi64 | head -n1) root/boot/Image
 elif [ "$IMAGE_TYPE" = "raspberrypi" ]; then
   BRCMTMP=$(mktemp -d)
-  7z e -y deps/rpi-firmware-nonfree-master.zip -o"$BRCMTMP" "firmware-nonfree-master/brcm/*" > /dev/null
+  7z e -y deps/rpi-firmware-nonfree-buster.zip -o"$BRCMTMP" "firmware-nonfree-buster/brcm/*" > /dev/null
   sudo mkdir -p root/lib/firmware/brcm/
   sudo cp "$BRCMTMP"/brcmfmac43455* root/lib/firmware/brcm/
   sudo cp "$BRCMTMP"/brcmfmac43430* root/lib/firmware/brcm/

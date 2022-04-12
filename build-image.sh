@@ -4,6 +4,8 @@ set -e
 
 
 # Set this to default to a KNOWN GOOD pi firmware (e.g. 1.20200811); this is used if RASPBERRY_PI_FIRMWARE env variable is not specified
+
+# Newest firmware got problem with nfs hanging
 DEFAULT_GOOD_PI_VERSION="1.20220308"
 
 # Set this to default to a KNOWN GOOD k3os (e.g. v0.11.1); this is used if K3OS_VERSION env variable is not specified
